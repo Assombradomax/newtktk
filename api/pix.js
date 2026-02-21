@@ -1,9 +1,8 @@
-// api/pix.js
-// Proxy serverless — criação de transação PIX via BRPix Digital
-// Evita exposição da API_KEY no browser e resolve CORS
+// api/pix.js — CommonJS (Vercel default runtime)
+// Proxy POST: cria transação PIX na BRPix Digital
+// A API_KEY fica no servidor (env var), nunca exposta ao browser — resolve CORS
 
-export default async function handler(req, res) {
-    // Apenas POST é aceito neste endpoint
+module.exports = async function handler(req, res) {
     if (req.method !== 'POST') {
         return res.status(405).json({ error: { message: 'Método não permitido.' } });
     }
@@ -11,6 +10,7 @@ export default async function handler(req, res) {
     const apiKey = process.env.BRPIX_API_KEY;
 
     if (!apiKey) {
+        console.error('[api/pix] Variável BRPIX_API_KEY não configurada.');
         return res.status(500).json({ error: { message: 'Configuração de API ausente no servidor.' } });
     }
 
@@ -26,11 +26,12 @@ export default async function handler(req, res) {
 
         const data = await upstream.json();
 
-        // Repassa o status code original da BRPix Digital
+        console.log(`[api/pix] BRPix status: ${upstream.status}`);
+
         return res.status(upstream.status).json(data);
 
     } catch (err) {
-        console.error('[api/pix] Erro ao chamar BRPix Digital:', err);
+        console.error('[api/pix] Erro ao chamar BRPix Digital:', err.message);
         return res.status(502).json({
             error: {
                 code: 'PROXY_ERROR',
@@ -38,4 +39,4 @@ export default async function handler(req, res) {
             },
         });
     }
-}
+};
