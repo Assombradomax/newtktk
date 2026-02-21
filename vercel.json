@@ -1,0 +1,13 @@
+{
+    "version": 2,
+    "routes": [
+        {
+            "src": "/p/(.*)",
+            "dest": "/p/$1"
+        },
+        {
+            "src": "/prize_now/(.*)",
+            "dest": "/prize_now/$1"
+        }
+    ]
+}

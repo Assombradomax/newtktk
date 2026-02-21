@@ -1,0 +1,19 @@
+# Dependências
+node_modules/
+
+# Arquivos de sistema
+.DS_Store
+Thumbs.db
+
+# Variáveis de ambiente (NUNCA commitar)
+.env
+.env.local
+.env.production
+
+# Agente (não faz parte do site)
+.agent/
+
+# Zips desnecessários
+p/pagamento.zip
+p/prize_now.zip
+p/redeem.zip
